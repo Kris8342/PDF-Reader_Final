@@ -35,10 +35,8 @@
 
 <h5 class="mb-3">PDF Measurement Tool</h5>
 
-<!-- Replace the existing file input with this -->
-<input type="file" id="filePick" accept="application/pdf" 
-       class="form-control form-control-sm mb-2" 
-       onchange="handleFileSelect(event)">
+<!-- FILE PICKER -->
+<input type="file" id="filePick" accept="application/pdf" class="form-control form-control-sm mb-2">
 
 <!-- PAGE & ZOOM CONTROLS -->
 <div class="mb-2">
@@ -54,66 +52,6 @@
   <canvas id="pdfCanvas"></canvas>
   <canvas id="olCanvas"></canvas>
 </div>
-
-
-<!-- Add this script near the top of your script section -->
-<script>
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (file) {
-            // Ensure it's a PDF
-            if (file.type === 'application/pdf') {
-                const fr = new FileReader();
-                fr.onload = ev => {
-                    // Use the existing PDF loading logic
-                    pdfjsLib.getDocument({ data: ev.target.result }).promise.then(doc => {
-                        pdfDoc = doc;
-                        pages = doc.numPages;
-                        page = 1;
-                        // Reset measurement data
-                        rows.length = 0;
-                        tblBody.innerHTML = ''; // Clear table display
-                        calibrationPoints = [];
-                        perimeterPoints = [];
-                        interiorPoints = [];
-                        customPoints = [];
-                        pxPerFt = basePxPerFt = null;
-                        $('calibrateStatus').textContent = 'Scale not calibrated';
-                        $('calibrateStatus').classList.remove('calibration-mode');
-                        vectorPerimeterDone = false;
-                        document.querySelector('input[value="Perimeter"]').disabled = false;
-                        $('btnLockPerim').classList.remove('disabled');
-
-                        renderPage();
-                        updateTotals();
-                    }).catch(err => {
-                        alert('Error loading PDF: ' + err.message);
-                    });
-                };
-                fr.readAsArrayBuffer(file);
-            } else {
-                alert('Please select a PDF file.');
-                // Clear the file input
-                event.target.value = '';
-            }
-        }
-    }
-
-    // Add mobile-specific touch handling
-    document.getElementById('filePick').addEventListener('touchstart', function(e) {
-        this.click(); // Trigger file selection on touch devices
-    });
-</script>
-
-<!-- Optional: Add some CSS to improve mobile file input -->
-<style>
-    #filePick {
-        /* Ensure the input is large enough to tap on mobile */
-        padding: 10px;
-        font-size: 16px; /* Prevents zoom on iOS when focused */
-    }
-</style>
-
 
 <!-- DISTANCE INPUT DIALOG -->
 <div id="distanceInput">
@@ -263,6 +201,13 @@
 
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+  const cdn = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js";
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    `${cdn}/${pdfjsLib.version}/pdf.worker.min.js`;
+</script>
+
 <script>
   // Set workerSrc via GlobalWorkerOptions
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';

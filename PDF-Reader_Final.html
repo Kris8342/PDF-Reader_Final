@@ -1,126 +1,258 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>PDF Measurement Tool</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.2/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.2/css/bootstrap.min.css"
+  />
   <style>
-    body { padding: 1rem; }
-    #wrapper { position: relative; display: inline-block; max-width: 100%; }
-    #pdfCanvas { border: 1px solid #777; cursor: crosshair; max-width: 100%; height: auto; touch-action: none; }
-    #olCanvas { position: absolute; left: 0; top: 0; pointer-events: auto; z-index: 10; max-width: 100%; height: auto; touch-action: none; }
-    #tblMeasurements tr.selected { background: #ffe0e0; }
-    .tool fieldset { margin-bottom: .8rem; }
-    .calibration-mode { color: #ff3300; font-weight: bold; }
-    #scaleFactor { font-weight: bold; }
+    body {
+      padding: 1rem;
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+    }
+    #wrapper {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+    }
+    #pdfCanvas {
+      border: 1px solid #777;
+      cursor: crosshair;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }
+    #olCanvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      pointer-events: auto;
+      z-index: 10;
+      max-width: 100%;
+      height: auto;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    #tblMeasurements tr.selected {
+      background: #ffe0e0;
+    }
+    .tool fieldset {
+      margin-bottom: 0.8rem;
+      background: #fff;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      padding: 1rem;
+    }
+    .calibration-mode {
+      color: #ff3300;
+      font-weight: bold;
+    }
+    #scaleFactor {
+      font-weight: bold;
+    }
     #distanceInput {
       display: none;
-      position: fixed; top: 50%; left: 50%;
+      position: fixed;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background: white; border: 2px solid #555;
-      padding: 15px; z-index: 1000;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      background: white;
+      border: 2px solid #555;
+      padding: 15px;
+      z-index: 1000;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      width: 90vw;
+      max-width: 320px;
+      font-size: 1rem;
     }
-    @media (max-width:768px) {
-      .tool { margin-top: 1rem; }
-      .btn-sm { padding: .375rem .5rem; font-size: .875rem; }
+    #distanceInput h6 {
+      margin-bottom: 0.75rem;
+      font-weight: bold;
+      color: #333;
+    }
+    #distFt,
+    #distIn {
+      width: 5rem;
+      font-size: 1rem;
+      min-height: 40px;
+      padding: 0.25rem 0.5rem;
+    }
+    @media (max-width: 768px) {
+      .tool {
+        margin-top: 1rem;
+        padding: 1rem;
+      }
+      .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+      }
       .input-group-sm > .btn,
-      .input-group-sm > .form-control { padding: .25rem .5rem; font-size: .875rem; }
-      #wrapper { width: 100%; }
+      .input-group-sm > .form-control {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+      }
+      #wrapper {
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
+  <h5 class="mb-3 text-center">PDF Measurement Tool</h5>
 
-<h5 class="mb-3">PDF Measurement Tool</h5>
-
-<!-- FILE PICKER -->
-<input type="file" id="filePick" accept="application/pdf" class="form-control form-control-sm mb-2">
-
-<!-- PAGE & ZOOM CONTROLS -->
-<div class="mb-2">
-  <button id="btnPrev" class="btn btn-sm btn-outline-secondary">&laquo; Prev</button>
-  <button id="btnNext" class="btn btn-sm btn-outline-secondary">Next &raquo;</button>
-  <button id="btnZIn" class="btn btn-sm btn-outline-secondary ms-3">Zoom +</button>
-  <button id="btnZOut" class="btn btn-sm btn-outline-secondary">Zoom −</button>
-  <span id="pageInfo" class="ms-3 small"></span>
-</div>
-
-<!-- PDF CANVAS + OVERLAY -->
-<div id="wrapper">
-  <canvas id="pdfCanvas"></canvas>
-  <canvas id="olCanvas"></canvas>
-</div>
-
-<!-- DISTANCE INPUT DIALOG -->
-<div id="distanceInput">
-  <h6>Enter actual distance:</h6>
-  <div class="mb-2">
-    <input type="number" id="distFt" class="form-control form-control-sm d-inline" style="width:4rem" min="0" value="0"> feet
-    <input type="number" id="distIn" class="form-control form-control-sm d-inline ms-2" style="width:4rem" min="0" step="0.0625" value="0"> inches
+  <!-- FILE PICKER -->
+  <div class="mb-3" style="max-width: 900px; margin: 0 auto;">
+    <input
+      type="file"
+      id="filePick"
+      accept="application/pdf"
+      class="form-control form-control-sm"
+    />
   </div>
-  <button id="distOK" class="btn btn-sm btn-primary">OK</button>
-  <button id="distCancel" class="btn btn-sm btn-secondary ms-2">Cancel</button>
-</div>
 
-<div class="row mt-4">
-  <div class="col-lg-4 tool">
+  <!-- PAGE & ZOOM CONTROLS -->
+  <div
+    class="mb-3"
+    style="
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    "
+  >
+    <button id="btnPrev" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+      « Prev
+    </button>
+    <button id="btnNext" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+      Next »
+    </button>
+    <button id="btnZIn" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+      Zoom +
+    </button>
+    <button id="btnZOut" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+      Zoom −
+    </button>
+    <span
+      id="pageInfo"
+      class="small flex-grow-1 text-center text-md-start"
+      style="margin-left: 1rem;"
+    ></span>
+  </div>
+
+  <!-- PDF CANVAS + OVERLAY -->
+  <div id="wrapper" style="max-width: 900px; margin: 0 auto;">
+    <canvas id="pdfCanvas"></canvas>
+    <canvas id="olCanvas"></canvas>
+  </div>
+
+  <!-- DISTANCE INPUT DIALOG -->
+  <div id="distanceInput" role="dialog" aria-modal="true" aria-labelledby="distanceInputLabel" aria-describedby="distanceInputDesc">
+    <h6 id="distanceInputLabel">Enter actual distance:</h6>
+    <div class="mb-3 d-flex align-items-center gap-2" id="distanceInputDesc">
+      <input type="number" id="distFt" class="form-control" min="0" step="any" aria-label="feet" />
+      <label for="distFt" class="mb-0">feet</label>
+      <input type="number" id="distIn" class="form-control" min="0" step="any" aria-label="inches" />
+      <label for="distIn" class="mb-0">inches</label>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+      <button id="distOK" class="btn btn-primary btn-sm">OK</button>
+      <button id="distCancel" class="btn btn-secondary btn-sm">Cancel</button>
+    </div>
+  </div>
+
+  <!-- TOOL PANEL -->
+  <div class="tool" style="max-width: 900px; margin: 1rem auto;">
     <!-- SCALE CALIBRATION -->
-    <fieldset class="border p-2">
-      <legend class="w-auto fs-6">Scale Calibration</legend>
-      <div class="mb-2">
-        <button id="btnCalibrate" class="btn btn-sm btn-primary">Calibrate Scale</button>
+    <fieldset>
+      <legend>Scale Calibration</legend>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <button id="btnCalibrate" class="btn btn-primary btn-sm flex-grow-1 flex-md-grow-0">
+          Calibrate Scale
+        </button>
         <span id="calibrateStatus" class="small ms-2">Scale not calibrated</span>
       </div>
       <div id="scaleFactor" class="small mt-1"></div>
     </fieldset>
 
     <!-- MEASUREMENT TYPES -->
-    <fieldset class="border p-2">
-      <legend class="w-auto fs-6">Measurement Types</legend>
+    <fieldset>
+      <legend>Measurement Types</legend>
       <div class="d-flex justify-content-between flex-wrap">
         <div>
           <div class="form-check">
-            <input id="chkPerim" class="form-check-input" type="checkbox" checked>
+            <input id="chkPerim" class="form-check-input" type="checkbox" checked />
             <label class="form-check-label" for="chkPerim">Perimeter</label>
           </div>
           <div class="form-check">
-            <input id="chkInt" class="form-check-input" type="checkbox" checked>
+            <input id="chkInt" class="form-check-input" type="checkbox" checked />
             <label class="form-check-label" for="chkInt">Interior</label>
           </div>
           <div class="form-check">
-            <input id="chkCustom" class="form-check-input" type="checkbox" checked>
+            <input id="chkCustom" class="form-check-input" type="checkbox" checked />
             <label class="form-check-label" for="chkCustom">Custom</label>
           </div>
         </div>
         <div>
-          <label class="me-2"><input type="radio" name="mtype" value="Perimeter" checked> Draw Perimeter</label>
-          <label class="me-2"><input type="radio" name="mtype" value="Interior"> Draw Interior</label>
-          <label><input type="radio" name="mtype" value="Custom"> Draw Custom</label>
+          <label class="me-2"
+            ><input type="radio" name="mtype" value="Perimeter" checked /> Draw Perimeter</label
+          >
+          <label class="me-2"><input type="radio" name="mtype" value="Interior" /> Draw Interior</label>
+          <label><input type="radio" name="mtype" value="Custom" /> Draw Custom</label>
         </div>
       </div>
-      <button id="btnAutoPerim" class="btn btn-sm btn-outline-success mt-2">Auto Perimeter</button>
-      <button id="btnDetectPerim" class="btn btn-sm btn-danger mt-2">Detect Perimeter (Auto)</button>
-      <button id="btnCompletePerim" class="btn btn-sm btn-outline-primary mt-2 ms-2">Complete Perimeter</button>
-      <button id="btnLockPerim" class="btn btn-sm btn-warning mt-2">Lock Perimeter → Start Interior</button>
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <button id="btnAutoPerim" class="btn btn-outline-success btn-sm flex-grow-1 flex-md-grow-0">
+          Auto Perimeter
+        </button>
+        <button id="btnDetectPerim" class="btn btn-danger btn-sm flex-grow-1 flex-md-grow-0">
+          Detect Perimeter (Auto)
+        </button>
+        <button
+          id="btnCompletePerim"
+          class="btn btn-outline-primary btn-sm flex-grow-1 flex-md-grow-0 ms-md-2"
+        >
+          Complete Perimeter
+        </button>
+        <button id="btnLockPerim" class="btn btn-warning btn-sm flex-grow-1 flex-md-grow-0 ms-md-2">
+          Lock Perimeter → Start Interior
+        </button>
+      </div>
     </fieldset>
 
     <!-- MEASUREMENT TABLE -->
-    <fieldset class="border p-2">
-      <legend class="w-auto fs-6">Measurements</legend>
-      <table class="table table-sm table-bordered mb-2" id="tblMeasurements">
-        <thead class="table-light"><tr><th>Type</th><th>Len (ft)</th><th>Pg</th></tr></thead>
+    <fieldset>
+      <legend>Measurements</legend>
+      <table class="table table-bordered table-sm" id="tblMeasurements">
+        <thead class="table-light">
+          <tr>
+            <th>Type</th>
+            <th>Len (ft)</th>
+            <th>Pg</th>
+          </tr>
+        </thead>
         <tbody></tbody>
       </table>
-      <button id="btnDel" class="btn btn-sm btn-outline-danger me-1">Delete selected</button>
-      <button id="btnClr" class="btn btn-sm btn-outline-secondary">Clear all</button>
-      <span class="small ms-2">Right-click/Double-tap canvas to delete last line.</span>
+      <div class="d-flex flex-wrap gap-2">
+        <button id="btnDel" class="btn btn-outline-danger btn-sm flex-grow-1 flex-md-grow-0">
+          Delete selected
+        </button>
+        <button id="btnClr" class="btn btn-outline-secondary btn-sm flex-grow-1 flex-md-grow-0">
+          Clear all
+        </button>
+      </div>
+      <small class="d-block mt-2">Right-click / Double-tap canvas to delete last line.</small>
     </fieldset>
 
     <!-- TOTALS -->
-    <fieldset class="border p-2">
-      <legend class="w-auto fs-6">Totals</legend>
+    <fieldset>
+      <legend>Totals</legend>
       <div id="totP">Perimeter: 0 ft</div>
       <div id="totI">Interior: 0 ft</div>
       <div id="totC">Custom: 0 ft</div>
@@ -128,810 +260,826 @@
     </fieldset>
 
     <!-- CONCRETE CALC -->
-    <fieldset class="border p-2">
-      <legend class="w-auto fs-6">Concrete calc</legend>
-
-      <div class="form-check form-switch mb-1">
-        <input id="chkAutoLF" class="form-check-input" type="checkbox" checked>
+    <fieldset>
+      <legend>Concrete calc</legend>
+      <div class="form-check form-switch mb-3">
+        <input id="chkAutoLF" class="form-check-input" type="checkbox" checked />
         <label class="form-check-label small" for="chkAutoLF">Use grand total</label>
       </div>
-
-      <div class="input-group input-group-sm mb-1">
+      <div class="input-group input-group-sm mb-3">
         <span class="input-group-text">Linear ft</span>
-        <input id="ccLF" class="form-control" value="0">
+        <input id="ccLF" class="form-control" value="0" />
       </div>
 
-      <div class="d-flex mb-1 small">
-        <span class="me-auto">Footer width:</span>
-        <input id="wFt" class="form-control form-control-sm w-25 me-1" value="2"> ft
-        <input id="wIn" class="form-control form-control-sm w-25 ms-2" value="4"> in
+      <div class="d-flex flex-wrap gap-3 mb-3 small">
+        <div class="d-flex align-items-center gap-1">
+          <span>Footer width:</span>
+          <input id="wFt" class="form-control form-control-sm" value="2" style="width: 3.5rem" />
+          <span>ft</span>
+          <input id="wIn" class="form-control form-control-sm" value="4" style="width: 3.5rem" />
+          <span>in</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-1">
+          <span>Footer depth:</span>
+          <input id="dFt" class="form-control form-control-sm" value="1" style="width: 3.5rem" />
+          <span>ft</span>
+          <input id="dIn" class="form-control form-control-sm" value="0" style="width: 3.5rem" />
+          <span>in</span>
+        </div>
       </div>
 
-      <div class="d-flex mb-2 small">
-        <span class="me-auto">Footer depth:</span>
-        <input id="dFt" class="form-control form-control-sm w-25 me-1" value="1"> ft
-        <input id="dIn" class="form-control form-control-sm w-25 ms-2" value="0"> in
+      <div class="small fw-bold mb-2">Piers:</div>
+
+      <div class="d-flex flex-wrap gap-3 mb-3 small">
+        <div class="d-flex align-items-center gap-1">
+          <span>Size:</span>
+          <input id="pierWFt" class="form-control form-control-sm" value="2" style="width: 3.5rem" />
+          <span>ft</span>
+          <input id="pierWIn" class="form-control form-control-sm" value="4" style="width: 3.5rem" />
+          <span>in</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-1">
+          <span>Depth:</span>
+          <input id="pierDFt" class="form-control form-control-sm" value="1" style="width: 3.5rem" />
+          <span>ft</span>
+          <input id="pierDIn" class="form-control form-control-sm" value="0" style="width: 3.5rem" />
+          <span>in</span>
+        </div>
+
+        <div class="d-flex align-items-center gap-1">
+          <span>Quantity:</span>
+          <input
+            id="pierQty"
+            class="form-control form-control-sm"
+            type="number"
+            min="0"
+            value="0"
+            style="width: 5rem"
+          />
+        </div>
       </div>
 
-      <div class="small fw-bold mb-1">Piers:</div>
-
-      <div class="d-flex mb-2 small">
-        <span class="me-auto">Size:</span>
-        <input id="pierWFt" class="form-control form-control-sm w-25 me-1" value="2"> ft
-        <input id="pierWIn" class="form-control form-control-sm w-25 ms-2" value="4"> in
-      </div>
-
-      <div class="d-flex mb-1 small">
-        <span class="me-auto">Depth:</span>
-        <input id="pierDFt" class="form-control form-control-sm w-25 me-1" value="1"> ft
-        <input id="pierDIn" class="form-control form-control-sm w-25 ms-2" value="0"> in
-      </div>
-
-      <div class="d-flex mb-2 small">
-        <span class="me-auto">Quantity:</span>
-        <input id="pierQty" class="form-control form-control-sm" type="number" min="0" value="0" style="width:80px">
-      </div>
-
-      <div class="row mb-1">
+      <div class="row g-2 mb-3">
         <div class="col-6">
           <div class="input-group input-group-sm">
             <span class="input-group-text">Footer yd³</span>
-            <input id="footerVol" class="form-control" readonly>
+            <input id="footerVol" class="form-control" readonly />
           </div>
         </div>
         <div class="col-6">
           <div class="input-group input-group-sm">
             <span class="input-group-text">Piers yd³</span>
-            <input id="pierVol" class="form-control" readonly>
+            <input id="pierVol" class="form-control" readonly />
           </div>
         </div>
       </div>
 
       <div class="input-group input-group-sm">
         <span class="input-group-text">Total yd³</span>
-        <input id="totalVol" class="form-control" readonly>
+        <input id="totalVol" class="form-control" readonly />
       </div>
     </fieldset>
 
-    <button id="btnCopy" class="btn btn-sm btn-success me-2">Copy</button>
-    <button id="btnRpt" class="btn btn-sm btn-outline-primary">Report</button>
-
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <button id="btnCopy" class="btn btn-success btn-sm flex-grow-1 flex-md-grow-0">Copy</button>
+      <button id="btnRpt" class="btn btn-outline-primary btn-sm flex-grow-1 flex-md-grow-0">Report</button>
+    </div>
   </div>
-</div>
 
-<!-- PDF.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
-<script>
-  const cdn = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js";
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    `${cdn}/${pdfjsLib.version}/pdf.worker.min.js`;
-</script>
+  <script>
+    const cdn = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `${cdn}/${pdfjsLib.version}/pdf.worker.min.js`;
+  </script>
 
-<script>
-  // Set workerSrc via GlobalWorkerOptions
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  <script>
+// Set workerSrc via GlobalWorkerOptions
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  /* DOM references */
-  const pdfCv   = document.getElementById('pdfCanvas'),
-        olCv    = document.getElementById('olCanvas'),
-        ctx     = pdfCv.getContext('2d'),
-        ctxO    = olCv.getContext('2d');
-  const tblBody = document.getElementById('tblMeasurements').querySelector('tbody');
+/* DOM references */
+const pdfCv   = document.getElementById('pdfCanvas'),
+      olCv    = document.getElementById('olCanvas'),
+      ctx     = pdfCv.getContext('2d'),
+      ctxO    = olCv.getContext('2d');
+const tblBody = document.getElementById('tblMeasurements').querySelector('tbody');
 
-  /* Global variables */
-  let pdfDoc = null, page = 1, pages = 0;
-  let zoom = 1.5, realZoom = 1.5;
-  let calibrateMode = false, calibrationPoints = [];
-  let pxPerFt = null, basePxPerFt = null;
-  const rows = []; // Stores measurement data { type, len, pg, p1, p2, color, tr }
-  
-  // Separate point arrays for different measurement types:
-  let perimeterPoints = [];
-  let interiorPoints = [];
-  let customPoints = [];
-  let vectorPerimeterDone = false; // prevents double-detection
-  
-  // Color arrays for different measurement types
-  const interiorColors = ['blue', 'green', 'orange', 'purple'];
-  const customColors = ['green', 'teal', 'yellow', 'pink'];
-  let interiorColorIndex = 0;
-  let customColorIndex = 0;
+/* Global variables */
+let pdfDoc = null, page = 1, pages = 0;
+let zoom = 1.5, realZoom = 1.5;
+let calibrateMode = false, calibrationPoints = [];
+let pxPerFt = null, basePxPerFt = null;
+const rows = []; // Stores measurement data { type, len, pg, p1, p2, color, tr }
 
-  /* Helper functions */
-  const $ = id => document.getElementById(id);
-  function ftDec(ft, inches) { return ft + inches / 12; }
-  function getEventPoint(e, canvas) {
-    const r = canvas.getBoundingClientRect();
-    let x = e.clientX, y = e.clientY;
-    if (e.touches && e.touches[0]) {
-      x = e.touches[0].clientX;
-      y = e.touches[0].clientY;
+// Separate point arrays for different measurement types:
+let perimeterPoints = [];
+let interiorPoints = [];
+let customPoints = [];
+let vectorPerimeterDone = false; // prevents double-detection
+
+// Color arrays for different measurement types
+const interiorColors = ['blue', 'green', 'orange', 'purple'];
+const customColors = ['green', 'teal', 'yellow', 'pink'];
+let interiorColorIndex = 0;
+let customColorIndex = 0;
+
+/* Helper functions */
+const $ = id => document.getElementById(id);
+function ftDec(ft, inches) { return ft + inches / 12; }
+function getEventPoint(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  let x = e.clientX, y = e.clientY;
+  if (e.touches && e.touches[0]) {
+    x = e.touches[0].clientX;
+    y = e.touches[0].clientY;
+  }
+  return {
+    x: (x - r.left) * (canvas.width / r.width),
+    y: (y - r.top) * (canvas.height / r.height)
+  };
+}
+
+/* Improved deleteLastLine function for starting new sections */
+function deleteLastLine() {
+  if (!rows.length) return;
+
+  // Find the last row for the current page
+  let lastRowIndex = -1;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (rows[i].pg === page) {
+      lastRowIndex = i;
+      break;
     }
-    return {
-      x: (x - r.left) * (canvas.width / r.width),
-      y: (y - r.top) * (canvas.height / r.height)
-    };
   }
 
-  /* Improved deleteLastLine function for starting new sections */
-  function deleteLastLine() {
-    if (!rows.length) return;
-    
-    // Find the last row for the current page
-    let lastRowIndex = -1;
-    for (let i = rows.length - 1; i >= 0; i--) {
-      if (rows[i].pg === page) {
-        lastRowIndex = i;
-        break;
-      }
+  if (lastRowIndex === -1) return; // No rows on current page
+
+  const lastRow = rows[lastRowIndex];
+  const type = lastRow.type;
+
+  // Remove from rows array
+  rows.splice(lastRowIndex, 1);
+
+  // Find and remove the corresponding table row
+  const trs = tblBody.querySelectorAll('tr');
+  for (let i = 0; i < trs.length; i++) {
+    if (trs[i]._rowData === lastRow) {
+      trs[i].remove();
+      break;
     }
-    
-    if (lastRowIndex === -1) return; // No rows on current page
-    
-    const lastRow = rows[lastRowIndex];
-    const type = lastRow.type;
-    
-    // Remove from rows array
-    rows.splice(lastRowIndex, 1);
-    
-    // Find and remove the corresponding table row
-    const trs = tblBody.querySelectorAll('tr');
-    for (let i = 0; i < trs.length; i++) {
-      if (trs[i]._rowData === lastRow) {
-        trs[i].remove();
-        break;
-      }
+  }
+
+  // Start a new section by clearing the relevant point array
+  if (type === 'Interior') {
+    // For Interior, start a new section with a new color
+    interiorPoints = [];
+    // Cycle through colors for interior walls: blue, green, orange, purple
+    interiorColorIndex = (interiorColorIndex + 1) % interiorColors.length;
+  } else if (type === 'Custom') {
+    // For Custom, also start a new section with a new color
+    customPoints = [];
+    // Cycle through colors for custom measurements: green, teal, yellow, pink
+    customColorIndex = (customColorIndex + 1) % customColors.length;
+  } else if (type === 'Perimeter') {
+    // For Perimeter, just remove the last point to continue the current section
+    if (perimeterPoints.length > 0) {
+      perimeterPoints.pop();
     }
-    
-    // Start a new section by clearing the relevant point array
-    if (type === 'Interior') {
-      // For Interior, start a new section with a new color
+  }
+
+  clearOL();
+  redrawOL();
+  updateTotals();
+  calcVolume();
+}
+
+// Wire deleteLastLine to right-click and double-click
+olCv.addEventListener('contextmenu', e => { 
+  e.preventDefault(); 
+  deleteLastLine(); 
+});
+
+olCv.addEventListener('dblclick', e => {
+  e.preventDefault();
+  deleteLastLine();
+});
+
+/* Load & render PDF */
+$('filePick').addEventListener('change', e => {
+  if (!e.target.files[0]) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    // Use object notation with a data property
+    pdfjsLib.getDocument({ data: ev.target.result }).promise.then(doc => {
+      pdfDoc = doc;
+      pages = doc.numPages;
+      page = 1;
+      // Reset measurement data
+      rows.length = 0;
+      tblBody.innerHTML = ''; // Clear table display
+      calibrationPoints = [];
+      perimeterPoints = [];
       interiorPoints = [];
-      // Cycle through colors for interior walls: blue, green, orange, purple
-      interiorColorIndex = (interiorColorIndex + 1) % interiorColors.length;
-    } else if (type === 'Custom') {
-      // For Custom, also start a new section with a new color
       customPoints = [];
-      // Cycle through colors for custom measurements: green, teal, yellow, pink
-      customColorIndex = (customColorIndex + 1) % customColors.length;
-    } else if (type === 'Perimeter') {
-      // For Perimeter, just remove the last point to continue the current section
-      if (perimeterPoints.length > 0) {
-        perimeterPoints.pop();
-      }
-    }
-    
-    clearOL();
-    redrawOL();
-    updateTotals();
-    calcVolume();
+      interiorColorIndex = 0;
+      customColorIndex = 0;
+      pxPerFt = basePxPerFt = null;
+      $('calibrateStatus').textContent = 'Scale not calibrated';
+      $('calibrateStatus').classList.remove('calibration-mode');
+      vectorPerimeterDone = false;
+      document.querySelector('input[value="Perimeter"]').disabled = false;
+      $('btnLockPerim').classList.remove('disabled');
+
+      renderPage();
+      updateTotals();
+    }).catch(err => alert(err.message));
+  };
+  fr.readAsArrayBuffer(e.target.files[0]);
+});
+
+// Prevent default behavior for drag/drop events
+['dragover', 'drop'].forEach(evt => document.body.addEventListener(evt, e => e.preventDefault()));
+document.body.addEventListener('drop', e => {
+  if (e.dataTransfer.files[0]) {
+    $('filePick').files = e.dataTransfer.files;
+    $('filePick').dispatchEvent(new Event('change'));
   }
+});
 
-  // Wire deleteLastLine to right-click and double-click
-  olCv.addEventListener('contextmenu', e => { 
-    e.preventDefault(); 
-    deleteLastLine(); 
-  });
-  
-  olCv.addEventListener('dblclick', e => {
-    e.preventDefault();
-    deleteLastLine();
-  });
-
-  /* Load & render PDF */
-  $('filePick').addEventListener('change', e => {
-    if (!e.target.files[0]) return;
-    const fr = new FileReader();
-    fr.onload = ev => {
-      // Use object notation with a data property
-      pdfjsLib.getDocument({ data: ev.target.result }).promise.then(doc => {
-        pdfDoc = doc;
-        pages = doc.numPages;
-        page = 1;
-        // Reset measurement data
-        rows.length = 0;
-        tblBody.innerHTML = ''; // Clear table display
-        calibrationPoints = [];
-        perimeterPoints = [];
-        interiorPoints = [];
-        customPoints = [];
-        interiorColorIndex = 0;
-        customColorIndex = 0;
-        pxPerFt = basePxPerFt = null;
-        $('calibrateStatus').textContent = 'Scale not calibrated';
-        $('calibrateStatus').classList.remove('calibration-mode');
-        vectorPerimeterDone = false;
-        document.querySelector('input[value="Perimeter"]').disabled = false;
-        $('btnLockPerim').classList.remove('disabled');
-
-        renderPage();
-        updateTotals();
-      }).catch(err => alert(err.message));
-    };
-    fr.readAsArrayBuffer(e.target.files[0]);
-  });
-
-  // Prevent default behavior for drag/drop events
-  ['dragover', 'drop'].forEach(evt => document.body.addEventListener(evt, e => e.preventDefault()));
-  document.body.addEventListener('drop', e => {
-    if (e.dataTransfer.files[0]) {
-      $('filePick').files = e.dataTransfer.files;
-      $('filePick').dispatchEvent(new Event('change'));
+function renderPage() {
+  if (!pdfDoc) return;
+  const pr = window.devicePixelRatio || 1;
+  realZoom = zoom * pr;
+  pdfDoc.getPage(page).then(p => {
+    const vp = p.getViewport({ scale: zoom });
+    pdfCv.width = olCv.width = vp.width;
+    pdfCv.height = olCv.height = vp.height;
+    // Maintain scale by recalculating using the stored base
+    if (basePxPerFt !== null) {
+      // Calculate current pxPerFt based on basePxPerFt and current zoom relative to base zoom (1.5)
+      pxPerFt = basePxPerFt * (zoom / 1.5);
+      updateScaleDisplay();
     }
-  });
-
-  function renderPage() {
-    if (!pdfDoc) return;
-    const pr = window.devicePixelRatio || 1;
-    realZoom = zoom * pr;
-    pdfDoc.getPage(page).then(p => {
-      const vp = p.getViewport({ scale: zoom });
-      pdfCv.width = olCv.width = vp.width;
-      pdfCv.height = olCv.height = vp.height;
-      // Maintain scale by recalculating using the stored base
-      if (basePxPerFt !== null) {
-        // Calculate current pxPerFt based on basePxPerFt and current zoom relative to base zoom (1.5)
-        pxPerFt = basePxPerFt * (zoom / 1.5);
-        updateScaleDisplay();
-      }
-      p.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
-        clearOL();
-        redrawOL();
-      });
-      $('pageInfo').textContent = `Page ${page}/${pages} | Zoom ${(zoom * 100).toFixed()}%`;
-      $('btnPrev').disabled = page <= 1;
-      $('btnNext').disabled = page >= pages;
+    p.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
+      clearOL();
+      redrawOL();
     });
+    $('pageInfo').textContent = `Page ${page}/${pages} | Zoom ${(zoom * 100).toFixed()}%`;
+    $('btnPrev').disabled = page <= 1;
+    $('btnNext').disabled = page >= pages;
+  });
+}
+
+/* Overlay drawing functions */
+function clearOL() {
+  ctxO.clearRect(0, 0, olCv.width, olCv.height);
+}
+
+function redrawOL() {
+  // Redraw measurement rows
+  rows.filter(r => r.pg === page).forEach(r => {
+    drawLine(r.p1, r.p2, r.color, `${r.len} ft`);
+  });
+
+  // Redraw current points for active drawing type
+  const type = document.querySelector('input[name="mtype"]:checked').value;
+  let currentPoints = [];
+  let pointColor = 'red';
+
+  if (type === 'Perimeter') { 
+    currentPoints = perimeterPoints; 
+    pointColor = 'red';
+  }
+  else if (type === 'Interior') { 
+    currentPoints = interiorPoints; 
+    pointColor = interiorColors[interiorColorIndex];
+  }
+  else if (type === 'Custom') { 
+    currentPoints = customPoints; 
+    pointColor = customColors[customColorIndex];
   }
 
-  /* Overlay drawing functions */
-  function clearOL() {
-    ctxO.clearRect(0, 0, olCv.width, olCv.height);
-  }
-  
-  function redrawOL() {
-    // Redraw measurement rows
-    rows.filter(r => r.pg === page).forEach(r => {
-      drawLine(r.p1, r.p2, r.color, `${r.len} ft`);
-    });
-    
-    // Redraw current points for active drawing type
-    const type = document.querySelector('input[name="mtype"]:checked').value;
-    let currentPoints = [];
-    let pointColor = 'red';
-    
-    if (type === 'Perimeter') { 
-      currentPoints = perimeterPoints; 
-      pointColor = 'red';
-    }
-    else if (type === 'Interior') { 
-      currentPoints = interiorPoints; 
-      pointColor = interiorColors[interiorColorIndex];
-    }
-    else if (type === 'Custom') { 
-      currentPoints = customPoints; 
-      pointColor = customColors[customColorIndex];
-    }
-
-    currentPoints.forEach(pt => {
-      ctxO.fillStyle = pointColor;
-      ctxO.beginPath();
-      ctxO.arc(pt.x, pt.y, 3, 0, 2*Math.PI);
-      ctxO.fill();
-    });
-  }
-  
-  function drawLine(p1, p2, color, lbl) {
-    ctxO.strokeStyle = color;
-    ctxO.lineWidth = 2;
+  currentPoints.forEach(pt => {
+    ctxO.fillStyle = pointColor;
     ctxO.beginPath();
-    ctxO.moveTo(p1.x, p1.y);
-    ctxO.lineTo(p2.x, p2.y);
-    ctxO.stroke();
-    if (lbl) {
-      const m = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
-            w = ctxO.measureText(lbl).width + 4;
-      ctxO.fillStyle = 'rgba(255,255,255,0.7)';
-      ctxO.fillRect(m.x - w / 2, m.y - 8, w, 14);
-      ctxO.fillStyle = '#000';
-      ctxO.font = '12px Arial';
-      ctxO.fillText(lbl, m.x - w / 2 + 2, m.y + 3);
-    }
+    ctxO.arc(pt.x, pt.y, 3, 0, 2*Math.PI);
+    ctxO.fill();
+  });
+}
+
+function drawLine(p1, p2, color, lbl) {
+  ctxO.strokeStyle = color;
+  ctxO.lineWidth = 2;
+  ctxO.beginPath();
+  ctxO.moveTo(p1.x, p1.y);
+  ctxO.lineTo(p2.x, p2.y);
+  ctxO.stroke();
+  if (lbl) {
+    const m = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 },
+          w = ctxO.measureText(lbl).width + 4;
+    ctxO.fillStyle = 'rgba(255,255,255,0.7)';
+    ctxO.fillRect(m.x - w / 2, m.y - 8, w, 14);
+    ctxO.fillStyle = '#000';
+    ctxO.font = '12px Arial';
+    ctxO.fillText(lbl, m.x - w / 2 + 2, m.y + 3);
   }
+}
 
-  /* Navigation & Zoom */
-  $('btnPrev').onclick = () => { if (page > 1) { page--; renderPage(); } };
-  $('btnNext').onclick = () => { if (page < pages) { page++; renderPage(); } };
-  function setZoom(factor) {
-    zoom = Math.max(0.5, Math.min(5, zoom * factor));
-    renderPage();
-  }
-  $('btnZIn').onclick  = () => setZoom(1.25);
-  $('btnZOut').onclick = () => setZoom(0.8);
-  pdfCv.addEventListener('wheel', e => {
-    e.preventDefault();
-    setZoom(e.deltaY < 0 ? 1.1 : 0.9);
-  }, { passive: false });
-  pdfCv.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+/* Navigation & Zoom */
+$('btnPrev').onclick = () => { if (page > 1) { page--; renderPage(); } };
+$('btnNext').onclick = () => { if (page < pages) { page++; renderPage(); } };
+function setZoom(factor) {
+  zoom = Math.max(0.5, Math.min(5, zoom * factor));
+  renderPage();
+}
+$('btnZIn').onclick  = () => setZoom(1.25);
+$('btnZOut').onclick = () => setZoom(0.8);
+pdfCv.addEventListener('wheel', e => {
+  e.preventDefault();
+  setZoom(e.deltaY < 0 ? 1.1 : 0.9);
+}, { passive: false });
+pdfCv.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
-  /* Calibration */
-  $('btnCalibrate').onclick = () => {
-    calibrateMode = true;
-    calibrationPoints = [];
-    clearOL();
-    $('calibrateStatus').textContent = 'CALIBRATION MODE: Click first point';
-    $('calibrateStatus').classList.add('calibration-mode');
-  };
-  function updateScaleDisplay() {
-    if (pxPerFt) $('scaleFactor').textContent = `Scale factor: ${pxPerFt.toFixed(2)} px = 1 ft`;
-  }
-  function showDistanceDialog() { $('distanceInput').style.display = 'block'; $('distFt').focus(); }
-  function hideDistanceDialog() { $('distanceInput').style.display = 'none'; }
+/* Calibration */
+$('btnCalibrate').onclick = () => {
+  calibrateMode = true;
+  calibrationPoints = [];
+  clearOL();
+  $('calibrateStatus').textContent = 'CALIBRATION MODE: Click first point';
+  $('calibrateStatus').classList.add('calibration-mode');
+};
+function updateScaleDisplay() {
+  if (pxPerFt) $('scaleFactor').textContent = `Scale factor: ${pxPerFt.toFixed(2)} px = 1 ft`;
+}
+function showDistanceDialog() { $('distanceInput').style.display = 'block'; $('distFt').focus(); }
+function hideDistanceDialog() { $('distanceInput').style.display = 'none'; }
 
-  $('distOK').onclick = () => {
-    const ft = parseFloat($('distFt').value) || 0,
-          ins = parseFloat($('distIn').value) || 0,
-          realDist = ftDec(ft, ins);
-    if (realDist <= 0) { alert('Enter a valid length > 0'); return; }
-    const p0 = calibrationPoints[0],
-          p1 = calibrationPoints[1],
-          pxD = Math.hypot(p1.x - p0.x, p1.y - p0.y);
-    pxPerFt = pxD / realDist;
-    // Store base scale using the initial zoom 1.5
-    basePxPerFt = pxPerFt / (zoom / 1.5);
-    const whole = Math.floor(realDist),
-          frac = Math.round((realDist - whole) * 12 * 100) / 100,
-          lbl = frac > 0 ? `${whole}' ${frac}"` : `${whole}'`;
-    drawLine(p0, p1, 'red', lbl);
-    $('calibrateStatus').textContent = `Calibrated! ${pxPerFt.toFixed(2)} px = 1 ft`;
-    $('calibrateStatus').classList.remove('calibration-mode');
-    updateScaleDisplay();
-    calibrateMode = false;
-    calibrationPoints = [];
-    hideDistanceDialog();
-  };
+$('distOK').onclick = () => {
+  const ft = parseFloat($('distFt').value) || 0,
+        ins = parseFloat($('distIn').value) || 0,
+        realDist = ftDec(ft, ins);
+  if (realDist <= 0) { alert('Enter a valid length > 0'); return; }
+  const p0 = calibrationPoints[0],
+        p1 = calibrationPoints[1],
+        pxD = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+  pxPerFt = pxD / realDist;
+  // Store base scale using the initial zoom 1.5
+  basePxPerFt = pxPerFt / (zoom / 1.5);
+  const whole = Math.floor(realDist),
+        frac = Math.round((realDist - whole) * 12 * 100) / 100,
+        lbl = frac > 0 ? `${whole}' ${frac}"` : `${whole}'`;
+  drawLine(p0, p1, 'red', lbl);
+  $('calibrateStatus').textContent = `Calibrated! ${pxPerFt.toFixed(2)} px = 1 ft`;
+  $('calibrateStatus').classList.remove('calibration-mode');
+  updateScaleDisplay();
+  calibrateMode = false;
+  calibrationPoints = [];
+  hideDistanceDialog();
+};
 
-  $('distCancel').onclick = () => {
-    hideDistanceDialog();
-    calibrateMode = false;
-    calibrationPoints = [];
-    $('calibrateStatus').textContent = 'Calibration cancelled';
-    $('calibrateStatus').classList.remove('calibration-mode');
-    clearOL();
-    redrawOL(); // Redraw existing measurements
-  };
+$('distCancel').onclick = () => {
+  hideDistanceDialog();
+  calibrateMode = false;
+  calibrationPoints = [];
+  $('calibrateStatus').textContent = 'Calibration cancelled';
+  $('calibrateStatus').classList.remove('calibration-mode');
+  clearOL();
+  redrawOL(); // Redraw existing measurements
+};
 
-  /* Interactive point click: calibration & measurement
-     All measurement types (Perimeter, Interior, Custom) are now drawn point-to-point.
-  */
-  olCv.addEventListener('click', handlePointClick);
-  olCv.addEventListener('touchend', handlePointClick);
+/* Interactive point click: calibration & measurement
+   All measurement types (Perimeter, Interior, Custom) are now drawn point-to-point.
+*/
+olCv.addEventListener('click', handlePointClick);
+olCv.addEventListener('touchend', handlePointClick);
 
-  function handlePointClick(e) {
-    if (!pdfDoc) return;
-    // Prevent default touch events that might interfere
-    if (e.type === 'touchend') e.preventDefault();
+function handlePointClick(e) {
+  if (!pdfDoc) return;
+  // Prevent default touch events that might interfere
+  if (e.type === 'touchend') e.preventDefault();
 
-    const pt = getEventPoint(e, olCv);
+  const pt = getEventPoint(e, olCv);
 
-    if (calibrateMode) {
-      calibrationPoints.push(pt);
-      if (calibrationPoints.length === 1) {
-        ctxO.fillStyle = 'red';
-        ctxO.beginPath();
-        ctxO.arc(pt.x, pt.y, 3, 0, 2*Math.PI);
-        ctxO.fill();
-        $('calibrateStatus').textContent = 'Click second point...';
-      } else {
-        // Draw line between calibration points and prompt for distance
-        ctxO.strokeStyle = 'red';
-        ctxO.lineWidth = 2;
-        ctxO.beginPath();
-        ctxO.moveTo(calibrationPoints[0].x, calibrationPoints[0].y);
-        ctxO.lineTo(pt.x, pt.y);
-        ctxO.stroke();
-        $('distFt').value = '0';
-        $('distIn').value = '0';
-        showDistanceDialog();
-      }
-    }
-    else if (pxPerFt) {
-      const type = document.querySelector('input[name="mtype"]:checked').value;
-      let currentPoints, pointColor, typeLabel;
-
-      if (type === 'Perimeter') {
-        currentPoints = perimeterPoints;
-        pointColor = 'red';
-        typeLabel = 'Perimeter';
-      } else if (type === 'Interior') {
-        currentPoints = interiorPoints;
-        pointColor = interiorColors[interiorColorIndex];
-        typeLabel = 'Interior';
-      } else if (type === 'Custom') {
-        currentPoints = customPoints;
-        pointColor = customColors[customColorIndex];
-        typeLabel = 'Custom';
-      } else {
-        return; // Should not happen with radio buttons
-      }
-
-      currentPoints.push(pt);
-
-      // Mark the point with a circle
-      ctxO.fillStyle = pointColor;
+  if (calibrateMode) {
+    calibrationPoints.push(pt);
+    if (calibrationPoints.length === 1) {
+      ctxO.fillStyle = 'red';
       ctxO.beginPath();
       ctxO.arc(pt.x, pt.y, 3, 0, 2*Math.PI);
       ctxO.fill();
-
-      if (currentPoints.length > 1) {
-        const p0 = currentPoints[currentPoints.length - 2],
-              p1 = pt,
-              d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
-              len = +(d / pxPerFt).toFixed(2);
-
-        drawLine(p0, p1, pointColor, `${len} ft`);
-
-        // Add row to data and table
-        const newRow = { type: typeLabel, len, pg: page, p1: p0, p2: p1, color: pointColor };
-        rows.push(newRow);
-
-        // Add row to table with data link and selection toggle
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${typeLabel}</td><td>${len}</td><td>${page}</td>`;
-        tr._rowData = newRow; // Link DOM row to data object
-        tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
-        tblBody.appendChild(tr);
-
-        updateTotals();
-      }
+      $('calibrateStatus').textContent = 'Click second point...';
     } else {
-      alert('Please calibrate first');
+      // Draw line between calibration points and prompt for distance
+      ctxO.strokeStyle = 'red';
+      ctxO.lineWidth = 2;
+      ctxO.beginPath();
+      ctxO.moveTo(calibrationPoints[0].x, calibrationPoints[0].y);
+      ctxO.lineTo(pt.x, pt.y);
+      ctxO.stroke();
+      $('distFt').value = '0';
+      $('distIn').value = '0';
+      showDistanceDialog();
+    }
+  }
+  else if (pxPerFt) {
+    const type = document.querySelector('input[name="mtype"]:checked').value;
+    let currentPoints, pointColor, typeLabel;
+
+    if (type === 'Perimeter') {
+      currentPoints = perimeterPoints;
+      pointColor = 'red';
+      typeLabel = 'Perimeter';
+    } else if (type === 'Interior') {
+      currentPoints = interiorPoints;
+      pointColor = interiorColors[interiorColorIndex];
+      typeLabel = 'Interior';
+    } else if (type === 'Custom') {
+      currentPoints = customPoints;
+      pointColor = customColors[customColorIndex];
+      typeLabel = 'Custom';
+    } else {
+      return; // Should not happen with radio buttons
+    }
+
+    currentPoints.push(pt);
+
+    // Mark the point with a circle
+    ctxO.fillStyle = pointColor;
+    ctxO.beginPath();
+    ctxO.arc(pt.x, pt.y, 3, 0, 2*Math.PI);
+    ctxO.fill();
+
+    if (currentPoints.length > 1) {
+      const p0 = currentPoints[currentPoints.length - 2],
+            p1 = pt,
+            d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
+            len = +(d / pxPerFt).toFixed(2);
+
+      drawLine(p0, p1, pointColor, `${len} ft`);
+
+      // Add row to data and table
+      const newRow = { type: typeLabel, len, pg: page, p1: p0, p2: p1, color: pointColor };
+      rows.push(newRow);
+
+      // Add row to table with data link and selection toggle
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${typeLabel}</td><td>${len}</td><td>${page}</td>`;
+      tr._rowData = newRow; // Link DOM row to data object
+      tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
+      tblBody.appendChild(tr);
+
+      updateTotals();
+    }
+  } else {
+    alert('Please calibrate first');
+  }
+}
+
+/* Auto Perimeter (legacy) */
+$('btnAutoPerim').onclick = () => {
+  if (!pxPerFt) { alert('Calibrate first'); return; }
+  if (perimeterPoints.length < 3) { alert('Click ≥3 points'); return; }
+  perimeterPoints.push(perimeterPoints[0]);
+  let tot = 0;
+  for (let i = 0; i < perimeterPoints.length - 1; i++) {
+    const p0 = perimeterPoints[i],
+          p1 = perimeterPoints[i + 1],
+          d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
+          L = +(d / pxPerFt).toFixed(2);
+    tot += L;
+    drawLine(p0, p1, 'red', `${L} ft`);
+
+    // Create new row data
+    const newRow = { type: 'Perimeter', len: L, pg: page, p1, p2: p1, color: 'red' };
+    rows.push(newRow);
+
+    // Add row to table with data link and selection toggle
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>Perimeter</td><td>${L}</td><td>${page}</td>`;
+    tr._rowData = newRow; // Link DOM row to data object
+    tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
+    tblBody.appendChild(tr);
+  }
+
+  // Add total row
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>Perimeter Total</td><td>${tot.toFixed(2)}</td><td>${page}</td>`;
+  tr.style.fontWeight = 'bold';
+  tblBody.appendChild(tr);
+
+  perimeterPoints = [];
+  updateTotals();
+};
+
+/* Enhanced Detect Perimeter */
+$('btnDetectPerim').onclick = async () => {
+  if (vectorPerimeterDone) {
+    alert('Perimeter already detected.');
+    return;
+  }
+  if (!pxPerFt) {
+    alert('Set the scale first.');
+    return;
+  }
+
+  const p = await pdfDoc.getPage(page);
+  let segs = await detectPerimeterVector(p, pxPerFt);
+
+  if (segs.length === 0) {
+    const useImageDetection = confirm("No vector perimeter found. Would you like to try image-based detection? (This is experimental and may be less accurate)");
+    if (useImageDetection) {
+      segs = await detectPerimeterImage(pxPerFt);
+    } else {
+      alert('No vector perimeter found on this page.');
+      return;
     }
   }
 
-  /* Auto Perimeter (legacy) */
-  $('btnAutoPerim').onclick = () => {
-    if (!pxPerFt) { alert('Calibrate first'); return; }
-    if (perimeterPoints.length < 3) { alert('Click ≥3 points'); return; }
-    perimeterPoints.push(perimeterPoints[0]);
-    let tot = 0;
-    for (let i = 0; i < perimeterPoints.length - 1; i++) {
-      const p0 = perimeterPoints[i],
-            p1 = perimeterPoints[i + 1],
-            d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
-            L = +(d / pxPerFt).toFixed(2);
-      tot += L;
-      drawLine(p0, p1, 'red', `${L} ft`);
-      
-      // Create new row data
-      const newRow = { type: 'Perimeter', len: L, pg: page, p1, p2: p1, color: 'red' };
-      rows.push(newRow);
-      
-      // Add row to table with data link and selection toggle
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>Perimeter</td><td>${L}</td><td>${page}</td>`;
-      tr._rowData = newRow; // Link DOM row to data object
-      tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
-      tblBody.appendChild(tr);
-    }
-    
-    // Add total row
+  if (segs.length === 0) {
+    alert('No perimeter could be detected on this page.');
+    return;
+  }
+
+  segs.forEach(s => {
+    // Create new row data
+    const newRow = {
+      type: 'Perimeter',
+      len: s.len,
+      pg: page,
+      p1: s.p1,
+      p2: s.p2,
+      color: s.color
+    };
+    rows.push(newRow);
+
+    // Add row to table with data link and selection toggle
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>Perimeter Total</td><td>${tot.toFixed(2)}</td><td>${page}</td>`;
-    tr.style.fontWeight = 'bold';
+    tr.innerHTML = `<td>Perimeter</td><td>${s.len}</td><td>${page}</td>`;
+    tr._rowData = newRow; // Link DOM row to data object
+    tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
     tblBody.appendChild(tr);
-    
-    perimeterPoints = [];
-    updateTotals();
-  };
+  });
 
-  /* Enhanced Detect Perimeter */
-  $('btnDetectPerim').onclick = async () => {
-    if (vectorPerimeterDone) {
-      alert('Perimeter already detected.');
-      return;
-    }
-    if (!pxPerFt) {
-      alert('Set the scale first.');
-      return;
-    }
-    
-    const p = await pdfDoc.getPage(page);
-    let segs = await detectPerimeterVector(p, pxPerFt);
-    
-    if (segs.length === 0) {
-      const useImageDetection = confirm("No vector perimeter found. Would you like to try image-based detection? (This is experimental and may be less accurate)");
-      if (useImageDetection) {
-        segs = await detectPerimeterImage(pxPerFt);
-      } else {
-        alert('No vector perimeter found on this page.');
-        return;
-      }
-    }
-    
-    if (segs.length === 0) {
-      alert('No perimeter could be detected on this page.');
-      return;
-    }
-    
-    segs.forEach(s => {
-      // Create new row data
-      const newRow = {
-        type: 'Perimeter',
-        len: s.len,
-        pg: page,
-        p1: s.p1,
-        p2: s.p2,
-        color: s.color
-      };
-      rows.push(newRow);
-      
-      // Add row to table with data link and selection toggle
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>Perimeter</td><td>${s.len}</td><td>${page}</td>`;
-      tr._rowData = newRow; // Link DOM row to data object
-      tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
-      tblBody.appendChild(tr);
-    });
-    
-    vectorPerimeterDone = true;
-    clearOL();
-    redrawOL();
-    updateTotals();
-    calcVolume();
-  };
+  vectorPerimeterDone = true;
+  clearOL();
+  redrawOL();
+  updateTotals();
+  calcVolume();
+};
 
-  // Enhanced detection function
-  async function detectPerimeterVector(page, pxPerFoot) {
-    const out = [];
-    const ops = await page.getOperatorList();
-    const verts = [];
-    
-    // Debug: output the first 100 operator codes and names
-    console.log("PDF Operators (first 100):", ops.fnArray.slice(0, 100).map(fn => {
-      return { opCode: fn, opName: Object.keys(pdfjsLib.OPS).find(key => pdfjsLib.OPS[key] === fn) };
-    }));
-    
-    // Track a current drawing path
-    let pathStarted = false;
-    let currentPath = [];
-    
-    for (let i = 0; i < ops.fnArray.length; i++) {
-      const fn = ops.fnArray[i];
-      const args = ops.argsArray[i];
-      
-      if (fn === pdfjsLib.OPS.beginPath) {
-        pathStarted = true;
-        currentPath = [];
-      }
-      else if (fn === pdfjsLib.OPS.moveTo && pathStarted) {
-        currentPath.push({ x: args[0], y: args[1] });
-      }
-      else if (fn === pdfjsLib.OPS.lineTo && pathStarted) {
-        currentPath.push({ x: args[0], y: args[1] });
-      }
-      else if (fn === pdfjsLib.OPS.curveTo && pathStarted) {
-        // Use endpoint of curve
-        currentPath.push({ x: args[4], y: args[5] });
-      }
-      else if (fn === pdfjsLib.OPS.closePath && pathStarted && currentPath.length > 0) {
-        currentPath.push({ ...currentPath[0] });
-      }
-      else if ((fn === pdfjsLib.OPS.stroke || fn === pdfjsLib.OPS.fill || fn === pdfjsLib.OPS.eoFill) && pathStarted) {
-        // Add segments
-        for (let j = 1; j < currentPath.length; j++) {
-          const p1 = currentPath[j-1],
-                p2 = currentPath[j],
-                lenPx = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-          if (lenPx > 5) {
-            const len = +(lenPx / pxPerFoot).toFixed(2);
-            out.push({ p1, p2, len, color: 'red', type: 'Perimeter' });
-          }
-        }
-        pathStarted = false;
-      }
+// Enhanced detection function
+async function detectPerimeterVector(page, pxPerFoot) {
+  const out = [];
+  const ops = await page.getOperatorList();
+  const verts = [];
+
+  // Debug: output the first 100 operator codes and names
+  console.log("PDF Operators (first 100):", ops.fnArray.slice(0, 100).map(fn => {
+    return { opCode: fn, opName: Object.keys(pdfjsLib.OPS).find(key => pdfjsLib.OPS[key] === fn) };
+  }));
+
+  // Track a current drawing path
+  let pathStarted = false;
+  let currentPath = [];
+
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i];
+    const args = ops.argsArray[i];
+
+    if (fn === pdfjsLib.OPS.beginPath) {
+      pathStarted = true;
+      currentPath = [];
     }
-    
-    console.log(`Found ${out.length} potential perimeter segments via vector detection.`);
-    
-    // If few segments, try alternative vertex collection
-    if (out.length < 5) {
-      console.log("Few segments found, using alternative detection...");
-      for (let i = 0; i < ops.fnArray.length; i++) {
-        const fn = ops.fnArray[i],
-              args = ops.argsArray[i];
-        if (fn === pdfjsLib.OPS.moveTo) verts.push({ x: args[0], y: args[1] });
-        else if (fn === pdfjsLib.OPS.lineTo) verts.push({ x: args[0], y: args[1] });
-      }
-      for (let i = 1; i < verts.length; i++) {
-        const p1 = verts[i-1],
-              p2 = verts[i],
+    else if (fn === pdfjsLib.OPS.moveTo && pathStarted) {
+      currentPath.push({ x: args[0], y: args[1] });
+    }
+    else if (fn === pdfjsLib.OPS.lineTo && pathStarted) {
+      currentPath.push({ x: args[0], y: args[1] });
+    }
+    else if (fn === pdfjsLib.OPS.curveTo && pathStarted) {
+      // Use endpoint of curve
+      currentPath.push({ x: args[4], y: args[5] });
+    }
+    else if (fn === pdfjsLib.OPS.closePath && pathStarted && currentPath.length > 0) {
+      currentPath.push({ ...currentPath[0] });
+    }
+    else if ((fn === pdfjsLib.OPS.stroke || fn === pdfjsLib.OPS.fill || fn === pdfjsLib.OPS.eoFill) && pathStarted) {
+      // Add segments
+      for (let j = 1; j < currentPath.length; j++) {
+        const p1 = currentPath[j-1],
+              p2 = currentPath[j],
               lenPx = Math.hypot(p2.x - p1.x, p2.y - p1.y);
         if (lenPx > 5) {
           const len = +(lenPx / pxPerFoot).toFixed(2);
           out.push({ p1, p2, len, color: 'red', type: 'Perimeter' });
         }
       }
-      console.log(`Alternative detection found ${out.length} segments.`);
+      pathStarted = false;
     }
-    
-    return out;
   }
 
-  // Image-based detection fallback (experimental)
-  async function detectPerimeterImage(pxPerFoot) {
-    const imageData = ctx.getImageData(0, 0, pdfCv.width, pdfCv.height);
-    const edges = [];
-    const threshold = 30;
-    const step = 10;
-    for (let y = step; y < pdfCv.height; y += step) {
-      for (let x = step; x < pdfCv.width; x += step) {
-        const idx = (y * pdfCv.width + x) * 4;
-        const idxLeft = (y * pdfCv.width + (x - step)) * 4;
-        const idxUp = ((y - step) * pdfCv.width + x) * 4;
-        if (Math.abs(imageData.data[idx] - imageData.data[idxLeft]) > threshold ||
-            Math.abs(imageData.data[idx+1] - imageData.data[idxLeft+1]) > threshold ||
-            Math.abs(imageData.data[idx+2] - imageData.data[idxLeft+2]) > threshold) {
-          edges.push({ x1: x - step, y1: y, x2: x, y2: y });
-        }
-        if (Math.abs(imageData.data[idx] - imageData.data[idxUp]) > threshold ||
-            Math.abs(imageData.data[idx+1] - imageData.data[idxUp+1]) > threshold ||
-            Math.abs(imageData.data[idx+2] - imageData.data[idxUp+2]) > threshold) {
-          edges.push({ x1: x, y1: y - step, x2: x, y2: y });
-        }
+  console.log(`Found ${out.length} potential perimeter segments via vector detection.`);
+
+  // If few segments, try alternative vertex collection
+  if (out.length < 5) {
+    console.log("Few segments found, using alternative detection...");
+    for (let i = 0; i < ops.fnArray.length; i++) {
+      const fn = ops.fnArray[i],
+            args = ops.argsArray[i];
+      if (fn === pdfjsLib.OPS.moveTo) verts.push({ x: args[0], y: args[1] });
+      else if (fn === pdfjsLib.OPS.lineTo) verts.push({ x: args[0], y: args[1] });
+    }
+    for (let i = 1; i < verts.length; i++) {
+      const p1 = verts[i-1],
+            p2 = verts[i],
+            lenPx = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      if (lenPx > 5) {
+        const len = +(lenPx / pxPerFoot).toFixed(2);
+        out.push({ p1, p2, len, color: 'red', type: 'Perimeter' });
       }
     }
-    return edges.map(e => {
-      const p1 = { x: e.x1, y: e.y1 },
-            p2 = { x: e.x2, y: e.y2 },
-            lenPx = Math.hypot(p2.x - p1.x, p2.y - p1.y),
-            len = +(lenPx / pxPerFoot).toFixed(2);
-      return { p1, p2, len, color: 'orange', type: 'Perimeter' };
-    });
+    console.log(`Alternative detection found ${out.length} segments.`);
   }
 
-  /* Complete Perimeter: manually connect the last and first points */
-  $('btnCompletePerim').onclick = () => {
-    if (!pxPerFt) { alert('Calibrate first'); return; }
-    if (perimeterPoints.length < 2) { alert('Click ≥2 points'); return; }
-    const p0 = perimeterPoints[perimeterPoints.length - 1],
-          p1 = perimeterPoints[0],
-          d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
-          len = +(d / pxPerFt).toFixed(2);
-    drawLine(p0, p1, 'red', `${len} ft`);
-    
-    // Create new row data
-    const newRow = { type: 'Perimeter', len, pg: page, p1: p0, p2: p1, color: 'red' };
-    rows.push(newRow);
-    
-    // Add row to table with data link and selection toggle
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>Perimeter</td><td>${len}</td><td>${page}</td>`;
-    tr._rowData = newRow; // Link DOM row to data object
-    tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
-    tblBody.appendChild(tr);
-    
-    // Clear the perimeter points array after completing the loop.
-    perimeterPoints = [];
-    updateTotals();
-  };
+  return out;
+}
 
-  /* Lock Perimeter → Start Interior */
-  $('btnLockPerim').onclick = () => {
-    const per = rows.filter(r => r.type === 'Perimeter').reduce((acc, cur) => acc + cur.len, 0);
-    $('chkAutoLF').checked = false;
-    $('ccLF').disabled = false;
-    $('ccLF').value = per.toFixed(2);
-    clearOL();
-    redrawOL();
-    updateTotals();
-    // Disable perimeter drawing and set mode to Interior
-    document.querySelector('input[value="Perimeter"]').disabled = true;
-    document.querySelector('input[value="Interior"]').checked = true;
-    $('btnLockPerim').classList.add('disabled');
-    alert('Perimeter locked. You can now start clicking to record interior walls.');
-  };
-
-  /* Delete Selected Rows */
-  $('btnDel').onclick = () => {
-    const sel = [...document.querySelectorAll('#tblMeasurements tr.selected')];
-    if (!sel.length) return;
-
-    sel.forEach(tr => {
-      // Remove from rows[]
-      const idx = rows.indexOf(tr._rowData);
-      if (idx !== -1) rows.splice(idx, 1);
-
-      // Also trim the points-array that drives overlay dots
-      const arr = tr._rowData.type === 'Perimeter' ? perimeterPoints
-               : tr._rowData.type === 'Interior'  ? interiorPoints
-               : customPoints;
-      if (arr.length) arr.pop(); // Last point belongs to this segment
-
-      tr.remove(); // Remove table row
-    });
-
-    clearOL(); redrawOL(); updateTotals(); calcVolume();
-  };
-
-  $('btnClr').onclick = () => {
-    rows.length = 0;
-    tblBody.innerHTML = ''; // Clear table display
-    clearOL();
-    redrawOL();
-    updateTotals();
-    perimeterPoints = [];
-    interiorPoints = [];
-    customPoints = [];
-    interiorColorIndex = 0;
-    customColorIndex = 0;
-    vectorPerimeterDone = false;
-    document.querySelector('input[value="Perimeter"]').disabled = false;
-    $('btnLockPerim').classList.remove('disabled');
-  };
-
-  /* Totals & Concrete Calculations */
-  function sumRows(type) {
-    return rows.filter(r => r.type === type).reduce((a, b) => a + b.len, 0);
+// Image-based detection fallback (experimental)
+async function detectPerimeterImage(pxPerFoot) {
+  const imageData = ctx.getImageData(0, 0, pdfCv.width, pdfCv.height);
+  const edges = [];
+  const threshold = 30;
+  const step = 10;
+  for (let y = step; y < pdfCv.height; y += step) {
+    for (let x = step; x < pdfCv.width; x += step) {
+      const idx = (y * pdfCv.width + x) * 4;
+      const idxLeft = (y * pdfCv.width + (x - step)) * 4;
+      const idxUp = ((y - step) * pdfCv.width + x) * 4;
+      if (Math.abs(imageData.data[idx] - imageData.data[idxLeft]) > threshold ||
+          Math.abs(imageData.data[idx+1] - imageData.data[idxLeft+1]) > threshold ||
+          Math.abs(imageData.data[idx+2] - imageData.data[idxLeft+2]) > threshold) {
+        edges.push({ x1: x - step, y1: y, x2: x, y2: y });
+      }
+      if (Math.abs(imageData.data[idx] - imageData.data[idxUp]) > threshold ||
+          Math.abs(imageData.data[idx+1] - imageData.data[idxUp+1]) > threshold ||
+          Math.abs(imageData.data[idx+2] - imageData.data[idxUp+2]) > threshold) {
+        edges.push({ x1: x, y1: y - step, x2: x, y2: y });
+      }
+    }
   }
-  function updateTotals() {
-    const p = sumRows('Perimeter'),
-          i = sumRows('Interior'),
-          c = sumRows('Custom');
-    let G = 0;
-    if ($('chkPerim').checked) G += p;
-    if ($('chkInt').checked) G += i;
-    if ($('chkCustom').checked) G += c;
-    $('totP').textContent = `Perimeter: ${p.toFixed(2)} ft`;
-    $('totI').textContent = `Interior: ${i.toFixed(2)} ft`;
-    $('totC').textContent = `Custom: ${c.toFixed(2)} ft`;
-    $('totG').textContent = `Grand Total: ${G.toFixed(2)} ft`;
-    if ($('chkAutoLF').checked) $('ccLF').value = G.toFixed(2);
-    calcVolume();
-  }
-  ['chkPerim','chkInt','chkCustom'].forEach(id => $(id).onchange = updateTotals);
-  function calcVolume() {
-    const L = parseFloat($('ccLF').value) || 0;
-    const w = ftDec(+$('wFt').value || 0, +$('wIn').value || 0);
-    const d = ftDec(+$('dFt').value || 0, +$('dIn').value || 0);
-    const fv = (L * w * d) / 27;
-    $('footerVol').value = fv.toFixed(2);
-    const pw = ftDec(+$('pierWFt').value || 0, +$('pierWIn').value || 0);
-    const pd = ftDec(+$('pierDFt').value || 0, +$('pierDIn').value || 0);
-    const pq = parseInt($('pierQty').value) || 0;
-    const pv = (pw * pw * pd * pq) / 27;
-    $('pierVol').value = pv.toFixed(2);
-    $('totalVol').value = (fv + pv).toFixed(2);
-  }
-  ['ccLF','wFt','wIn','dFt','dIn','pierWFt','pierWIn','pierDFt','pierDIn','pierQty']
-      .forEach(id => $(id).oninput = calcVolume);
-  $('chkAutoLF').onchange = e => {
-    $('ccLF').disabled = e.target.checked;
-    if (e.target.checked) updateTotals();
-  };
+  return edges.map(e => {
+    const p1 = { x: e.x1, y: e.y1 },
+          p2 = { x: e.x2, y: e.y2 },
+          lenPx = Math.hypot(p2.x - p1.x, p2.y - p1.y),
+          len = +(lenPx / pxPerFoot).toFixed(2);
+    return { p1, p2, len, color: 'orange', type: 'Perimeter' };
+  });
+}
 
-  /* Copy & Report */
-  $('btnCopy').onclick = () => {
-    let t = 'TYPE\tLEN(ft)\tPAGE\n';
-    rows.forEach(r => t += `${r.type}\t${r.len}\t${r.pg}\n`);
-    t += '\nSUMMARY:\n' + $('totP').textContent + '\n' + $('totI').textContent + '\n' + $('totC').textContent + '\n' + $('totG').textContent + '\n\n';
-    t += 'CONCRETE CALC:\nLinear ft: ' + $('ccLF').value + '\nFooter: ' + $('wFt').value + '\' ' + $('wIn').value + '" x ' + $('dFt').value + '\' ' + $('dIn').value + '"\n';
-    t += 'Footer vol: ' + $('footerVol').value + ' yd³\n';
-    t += 'Piers: ' + $('pierQty').value + ' @ ' + $('pierWFt').value + '\' ' + $('pierWIn').value + '" x ' + $('pierDFt').value + '\' ' + $('pierDIn').value + '"\n';
-    t += 'Pier vol: ' + $('pierVol').value + ' yd³\n';
-    t += 'Total conc: ' + $('totalVol').value + ' yd³\n';
-    navigator.clipboard.writeText(t)
-      .then(() => alert('Copied!'))
-      .catch(() => alert('Copy failed'));
-  };
+/* Complete Perimeter: manually connect the last and first points */
+$('btnCompletePerim').onclick = () => {
+  if (!pxPerFt) { alert('Calibrate first'); return; }
+  if (perimeterPoints.length < 2) { alert('Click ≥2 points'); return; }
+  const p0 = perimeterPoints[perimeterPoints.length - 1],
+        p1 = perimeterPoints[0],
+        d = Math.hypot(p1.x - p0.x, p1.y - p0.y),
+        len = +(d / pxPerFt).toFixed(2);
+  drawLine(p0, p1, 'red', `${len} ft`);
 
-  $('btnRpt').onclick = () => {
-    let G = 0;
-    if ($('chkPerim').checked) G += sumRows('Perimeter');
-    if ($('chkInt').checked) G += sumRows('Interior');
-    if ($('chkCustom').checked) G += sumRows('Custom');
-    const html = `
+  // Create new row data
+  const newRow = { type: 'Perimeter', len, pg: page, p1: p0, p2: p1, color: 'red' };
+  rows.push(newRow);
+
+  // Add row to table with data link and selection toggle
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>Perimeter</td><td>${len}</td><td>${page}</td>`;
+  tr._rowData = newRow; // Link DOM row to data object
+  tr.onclick = () => tr.classList.toggle('selected'); // Selection toggle
+  tblBody.appendChild(tr);
+
+  // Clear the perimeter points array after completing the loop.
+  perimeterPoints = [];
+  updateTotals();
+};
+
+/* Lock Perimeter → Start Interior */
+$('btnLockPerim').onclick = () => {
+  const per = rows.filter(r => r.type === 'Perimeter').reduce((acc, cur) => acc + cur.len, 0);
+  $('chkAutoLF').checked = false;
+  $('ccLF').disabled = false;
+  $('ccLF').value = per.toFixed(2);
+  clearOL();
+  redrawOL();
+  updateTotals();
+  // Disable perimeter drawing and set mode to Interior
+  document.querySelector('input[value="Perimeter"]').disabled = true;
+  document.querySelector('input[value="Interior"]').checked = true;
+  $('btnLockPerim').classList.add('disabled');
+  alert('Perimeter locked. You can now start clicking to record interior walls.');
+};
+
+/* Delete Selected Rows */
+$('btnDel').onclick = () => {
+  const sel = [...document.querySelectorAll('#tblMeasurements tr.selected')];
+  if (!sel.length) return;
+
+  sel.forEach(tr => {
+    // Remove from rows[]
+    const idx = rows.indexOf(tr._rowData);
+    if (idx !== -1) rows.splice(idx, 1);
+
+    // Also trim the points-array that drives overlay dots
+    const arr = tr._rowData.type === 'Perimeter' ? perimeterPoints
+             : tr._rowData.type === 'Interior'  ? interiorPoints
+             : customPoints;
+    if (arr.length) arr.pop(); // Last point belongs to this segment
+
+    tr.remove(); // Remove table row
+  });
+
+  clearOL(); redrawOL(); updateTotals(); calcVolume();
+};
+
+$('btnClr').onclick = () => {
+  rows.length = 0;
+  tblBody.innerHTML = ''; // Clear table display
+  clearOL();
+  redrawOL();
+  updateTotals();
+  perimeterPoints = [];
+  interiorPoints = [];
+  customPoints = [];
+  interiorColorIndex = 0;
+  customColorIndex = 0;
+  vectorPerimeterDone = false;
+  document.querySelector('input[value="Perimeter"]').disabled = false;
+  $('btnLockPerim').classList.remove('disabled');
+};
+
+/* Totals & Concrete Calculations */
+function sumRows(type) {
+  return rows.filter(r => r.type === type).reduce((a, b) => a + b.len, 0);
+}
+function updateTotals() {
+  const p = sumRows('Perimeter'),
+        i = sumRows('Interior'),
+        c = sumRows('Custom');
+  let G = 0;
+  if ($('chkPerim').checked) G += p;
+  if ($('chkInt').checked) G += i;
+  if ($('chkCustom').checked) G += c;
+  $('totP').textContent = `Perimeter: ${p.toFixed(2)} ft`;
+  $('totI').textContent = `Interior: ${i.toFixed(2)} ft`;
+  $('totC').textContent = `Custom: ${c.toFixed(2)} ft`;
+  $('totG').textContent = `Grand Total: ${G.toFixed(2)} ft`;
+  if ($('chkAutoLF').checked) $('ccLF').value = G.toFixed(2);
+  calcVolume();
+}
+['chkPerim','chkInt','chkCustom'].forEach(id => $(id).onchange = updateTotals);
+function calcVolume() {
+  const L = parseFloat($('ccLF').value) || 0;
+  const w = ftDec(+$('wFt').value || 0, +$('wIn').value || 0);
+  const d = ftDec(+$('dFt').value || 0, +$('dIn').value || 0);
+  const fv = (L * w * d) / 27;
+  $('footerVol').value = fv.toFixed(2);
+  const pw = ftDec(+$('pierWFt').value || 0, +$('pierWIn').value || 0);
+  const pd = ftDec(+$('pierDFt').value || 0, +$('pierDIn').value || 0);
+  const pq = parseInt($('pierQty').value) || 0;
+  const pv = (pw * pw * pd * pq) / 27;
+  $('pierVol').value = pv.toFixed(2);
+  $('totalVol').value = (fv + pv).toFixed(2);
+}
+['ccLF','wFt','wIn','dFt','dIn','pierWFt','pierWIn','pierDFt','pierDIn','pierQty']
+    .forEach(id => $(id).oninput = calcVolume);
+$('chkAutoLF').onchange = e => {
+  $('ccLF').disabled = e.target.checked;
+  if (e.target.checked) updateTotals();
+};
+
+/* Copy & Report */
+$('btnCopy').onclick = () => {
+  let t = 'TYPE\tLEN(ft)\tPAGE\n';
+  rows.forEach(r => t += `${r.type}\t${r.len}\t${r.pg}\n`);
+  t += '\nSUMMARY:\n' + $('totP').textContent + '\n' + $('totI').textContent + '\n' + $('totC').textContent + '\n' + $('totG').textContent + '\n\n';
+  t += 'CONCRETE CALC:\nLinear ft: ' + $('ccLF').value + '\nFooter: ' + $('wFt').value + '\' ' + $('wIn').value + '" x ' + $('dFt').value + '\' ' + $('dIn').value + '"\n';
+  t += 'Footer vol: ' + $('footerVol').value + ' yd³\n';
+  t += 'Piers: ' + $('pierQty').value + ' @ ' + $('pierWFt').value + '\' ' + $('pierWIn').value + '" x ' + $('pierDFt').value + '\' ' + $('pierDIn').value + '"\n';
+  t += 'Pier vol: ' + $('pierVol').value + ' yd³\n';
+  t += 'Total conc: ' + $('totalVol').value + ' yd³\n';
+  navigator.clipboard.writeText(t)
+    .then(() => alert('Copied!'))
+    .catch(() => alert('Copy failed'));
+};
+
+$('btnRpt').onclick = () => {
+  let G = 0;
+  if ($('chkPerim').checked) G += sumRows('Perimeter');
+  if ($('chkInt').checked) G += sumRows('Interior');
+  if ($('chkCustom').checked) G += sumRows('Custom');
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -966,13 +1114,13 @@
   <p class="total">Total: ${$('totalVol').value} yd³</p>
 </body>
 </html>`;
-    const blob = new Blob([html], { type: 'text/html' });
-    window.open(URL.createObjectURL(blob), '_blank');
-  };
+  const blob = new Blob([html], { type: 'text/html' });
+  window.open(URL.createObjectURL(blob), '_blank');
+};
 
-  /* Initialize concrete volume */
-  calcVolume();
+/* Initialize concrete volume */
+calcVolume();
 
-</script>
+  </script>
 </body>
 </html>
